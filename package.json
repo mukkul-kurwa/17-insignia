@@ -1,0 +1,16 @@
+{
+  "name": "17-insignia-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "17 Insignia landing page with lead notifications (email + WhatsApp)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.16"
+  }
+}

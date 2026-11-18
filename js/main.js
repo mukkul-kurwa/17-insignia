@@ -5,9 +5,22 @@
   var CONFIG = {
     whatsapp: "919170917071",
     agreementValue: 5689220, // Basic price used for the payment schedule
-    // To send leads to a CRM / Google Sheet / Formspree, set an endpoint here.
-    // When empty, the form opens WhatsApp with the enquiry pre-filled.
-    formEndpoint: ""
+    // Server endpoint that emails + WhatsApps each lead to the team (see server.js).
+    leadEndpoint: "/api/lead",
+    // Exit popup: on touch devices (no mouse "exit"), show after this many seconds instead.
+    exitPopupMobileDelay: 40
+  };
+
+  function postLead(data) {
+    return fetch(CONFIG.leadEndpoint, {
+      method: "POST", keepalive: true,
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(data)
+    }).then(function (r) { if (!r.ok) throw new Error("lead " + r.status); return r.json(); });
+  }
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k) || sessionStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v, session) { try { (session ? sessionStorage : localStorage).setItem(k, v); } catch (e) {} }
   };
 
   // WhatsApp links: open chat with a pre-filled greeting
@@ -147,20 +160,88 @@
     if (!form.consent.checked) ok = false;
     if (!ok) { status.className = "form-status err"; status.textContent = "Please enter your name, a valid mobile number and accept the consent."; return; }
 
-    var data = { name: name, phone: phone, email: form.email.value.trim(), purpose: form.purpose.value, project: "17 Insignia" };
+    var data = { name: name, phone: phone, email: form.email.value.trim(), purpose: form.purpose.value,
+      website: form.website.value, source: "enquiry-form" };
 
-    if (CONFIG.formEndpoint) {
-      status.className = "form-status"; status.textContent = "Sending…";
-      fetch(CONFIG.formEndpoint, { method: "POST", headers: { "Content-Type": "application/json", "Accept": "application/json" }, body: JSON.stringify(data) })
-        .then(function (r) { if (!r.ok) throw new Error(); status.className = "form-status ok"; status.textContent = "Thank you! Our team will call you shortly."; form.reset(); })
-        .catch(function () { status.className = "form-status err"; status.textContent = "Something went wrong. Please call +91 9170917071."; });
-      return;
-    }
+    // Notify the team by email + WhatsApp in the background, then open WhatsApp for the visitor as before.
+    postLead(data).catch(function () {});
+    store.set("lead_sent", "1");
 
     var msg = "Hi, I'm interested in 17 Insignia (1 BHK, Baner).\nName: " + data.name + "\nPhone: " + data.phone +
       (data.email ? "\nEmail: " + data.email : "") + "\nPurpose: " + data.purpose + "\nPlease share details / schedule a site visit.";
     window.open("https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(msg), "_blank", "noopener");
     status.className = "form-status ok"; status.textContent = "Opening WhatsApp to send your enquiry…";
+  });
+
+  // Exit-intent popup: shows once per visit, never after a lead has been sent.
+  var pop = document.getElementById("exitPop");
+  var exitForm = document.getElementById("exitForm");
+  var exitStatus = document.getElementById("exitStatus");
+  var lastFocus = null;
+  var armedAt = Date.now() + 6000; // don't fire in the first few seconds
+  function popAllowed() {
+    return !store.get("lead_sent") && !store.get("exit_seen") && !lb.classList.contains("open") &&
+      !nav.classList.contains("open") && !form.contains(document.activeElement);
+  }
+  function openPop() {
+    if (!popAllowed() || Date.now() < armedAt) return;
+    store.set("exit_seen", "1", true);
+    lastFocus = document.activeElement;
+    pop.hidden = false;
+    pop.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    requestAnimationFrame(function () { pop.classList.add("open"); });
+    setTimeout(function () { exitForm.name.focus({ preventScroll: true }); }, 60);
+  }
+  function closePop() {
+    pop.classList.remove("open");
+    pop.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    setTimeout(function () { pop.hidden = true; }, 300);
+    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+  }
+  pop.querySelector(".exit-close").addEventListener("click", closePop);
+  pop.addEventListener("click", function (e) { if (e.target === pop) closePop(); });
+  document.addEventListener("keydown", function (e) {
+    if (pop.hidden) return;
+    if (e.key === "Escape") closePop();
+    if (e.key === "Tab") { // keep focus inside the dialog
+      var f = Array.prototype.filter.call(pop.querySelectorAll("button, a[href], input:not([tabindex='-1'])"),
+        function (el) { return el.offsetParent !== null; });
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+  // Desktop: pointer leaves through the top of the window (towards the tabs / close button).
+  document.documentElement.addEventListener("mouseleave", function (e) { if (e.clientY <= 0) openPop(); });
+  // Touch devices have no "exit" gesture: show after a while on the page instead.
+  if (window.matchMedia("(hover: none)").matches) {
+    setTimeout(openPop, CONFIG.exitPopupMobileDelay * 1000);
+  }
+
+  exitForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = exitForm.name.value.trim();
+    var phone = exitForm.phone.value.trim();
+    var phoneOk = /^[0-9+\s-]{10,16}$/.test(phone) && phone.replace(/\D/g, "").length >= 10;
+    exitForm.name.classList.toggle("invalid", !name);
+    exitForm.phone.classList.toggle("invalid", !phoneOk);
+    if (!name || !phoneOk) { exitStatus.className = "form-status err"; exitStatus.textContent = "Please enter your name and a valid mobile number."; return; }
+    var btn = exitForm.querySelector("button[type=submit]");
+    btn.disabled = true; exitStatus.className = "form-status"; exitStatus.textContent = "Sending…";
+    postLead({ name: name, phone: phone, website: exitForm.website.value, source: "exit-popup" })
+      .then(function () {
+        store.set("lead_sent", "1");
+        exitForm.hidden = true;
+        pop.querySelector(".exit-done").hidden = false;
+      })
+      .catch(function () {
+        btn.disabled = false;
+        exitStatus.className = "form-status err";
+        exitStatus.innerHTML = "Couldn't send right now. Please <a href='tel:+919170917071'>call</a> or <a class='js-wa' target='_blank' rel='noopener' href='" + waHref + "'>WhatsApp us</a>.";
+      });
   });
 
   document.getElementById("year").textContent = new Date().getFullYear();

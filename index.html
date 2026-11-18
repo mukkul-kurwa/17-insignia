@@ -361,6 +361,7 @@
           <option>Both</option>
         </select>
       </label>
+      <label class="hp" aria-hidden="true">Website<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
       <label class="check"><input type="checkbox" name="consent" required checked> I agree to be contacted by Insignia Associates about 17 Insignia.</label>
       <button type="submit" class="btn btn-gold btn-block">Request a Call Back</button>
       <a class="btn btn-wa btn-block js-wa" href="https://wa.me/919170917071" target="_blank" rel="noopener">Or chat on WhatsApp</a>
@@ -402,6 +403,34 @@
 <div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-label="Image viewer">
   <button class="lb-close" aria-label="Close">×</button>
   <img alt="">
+</div>
+
+<!-- Exit-intent popup -->
+<div class="exit-pop" id="exitPop" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="exitTitle" hidden>
+  <div class="exit-card">
+    <button type="button" class="exit-close" aria-label="Close">×</button>
+    <div class="exit-media" aria-hidden="true">
+      <img src="assets/img/interior-living.jpg" alt="" loading="lazy">
+    </div>
+    <div class="exit-body">
+      <p class="eyebrow">Before you go</p>
+      <h2 id="exitTitle">Get the price sheet &amp; <span class="gold">floor plans.</span></h2>
+      <p class="exit-sub">Leave your number and our team will send the latest availability, cost sheet and offers for 17 Insignia.</p>
+      <form id="exitForm" novalidate>
+        <label>Full name<input name="name" type="text" autocomplete="name" required maxlength="80"></label>
+        <label>Mobile number<input name="phone" type="tel" autocomplete="tel" inputmode="tel" required maxlength="16"></label>
+        <label class="hp" aria-hidden="true">Website<input name="website" type="text" tabindex="-1" autocomplete="off"></label>
+        <button type="submit" class="btn btn-gold btn-block">Send me the details</button>
+        <p class="exit-fine">By submitting, you agree to be contacted by Insignia Associates about 17 Insignia.</p>
+        <p class="form-status" id="exitStatus" role="status" aria-live="polite"></p>
+      </form>
+      <div class="exit-done" hidden>
+        <h3>Thank you!</h3>
+        <p>We've received your details and will reach out shortly. Need it faster?</p>
+        <a class="btn btn-wa btn-block js-wa" href="https://wa.me/919170917071" target="_blank" rel="noopener">Chat on WhatsApp now</a>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="js/main.js"></script>

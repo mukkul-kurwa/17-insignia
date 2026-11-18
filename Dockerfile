@@ -1,4 +1,9 @@
-# Static hosting for the 17 Insignia landing page (Railway or any Docker host).
-FROM caddy:2.8-alpine
-COPY Caddyfile /etc/caddy/Caddyfile
-COPY . /srv
+# 17 Insignia landing page + lead notifications (Railway or any Docker host).
+FROM node:22-alpine
+ENV NODE_ENV=production
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY . .
+USER node
+CMD ["node", "server.js"]
