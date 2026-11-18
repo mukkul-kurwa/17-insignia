@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 93 94" role="img" aria-label="17 Insignia">
+  <defs>
+    <linearGradient id="g17" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dcb66f"/>
+      <stop offset="1" stop-color="#a27636"/>
+    </linearGradient>
+    <clipPath id="c17"><circle cx="46.5" cy="47" r="45.5"/></clipPath>
+  </defs>
+  <g clip-path="url(#c17)" fill="url(#g17)">
+    <!-- left segment (below the "1" flag) -->
+    <rect x="0" y="19.5" width="23.5" height="75"/>
+    <!-- "1" flag serif -->
+    <polygon points="27,0 39,0 39,6.4 30.5,2.4"/>
+    <!-- top cap + stem + wedge (negative space forms the "7") -->
+    <polygon points="39,0 93,0 93,16.5 43.5,16.5 43.5,31.5 71.8,31.5 44.4,94 39,94"/>
+    <!-- right sliver -->
+    <polygon points="104.9,0 120,0 120,94 62,94"/>
+  </g>
+</svg>

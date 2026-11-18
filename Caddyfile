@@ -1,0 +1,17 @@
+{
+	admin off
+}
+
+# Railway provides $PORT; fall back to 8080 locally.
+:{$PORT:8080} {
+	root * /srv
+	encode zstd gzip
+
+	@assets path /assets/* /css/* /js/*
+	header @assets Cache-Control "public, max-age=604800"
+	header -Server
+
+	file_server {
+		hide Caddyfile Dockerfile README.md .dockerignore .git
+	}
+}
